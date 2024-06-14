@@ -279,7 +279,7 @@ impl Bruhs {
         Ok(())
     }
 
-    pub fn into_gif(&self, file: PathBuf) -> Result<(), io::Error> {
+    pub fn into_gif(&self, file: &PathBuf) -> Result<(), io::Error> {
         let mut pngsdir = file.clone();
         pngsdir.set_extension("pngs");
 

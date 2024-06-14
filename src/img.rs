@@ -11,7 +11,7 @@ use skia_safe::{
 
 use css_color_parser::Color as CssColor;
 
-use crate::frame::{BruhDelta, TakeRef};
+use crate::bruhs::{BruhDelta, TakeRef};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Bruh {
