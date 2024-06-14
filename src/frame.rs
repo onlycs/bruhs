@@ -281,6 +281,28 @@ impl Bruhs {
 
         Ok(())
     }
+
+    pub fn into_gif(&self, file: PathBuf) -> Result<(), io::Error> {
+        let mut pngsdir = file.clone();
+        pngsdir.set_extension("pngs");
+        self.into_pngs(pngsdir.clone())?;
+
+        // run ffmpeg
+        let output = std::process::Command::new("ffmpeg")
+            .args(&[
+                "-i",
+                format!("{}/frame%d.png", pngsdir.to_str().unwrap()).as_str(),
+                file.to_str().unwrap(),
+            ])
+            .output()
+            .expect("failed to execute process");
+
+        if !output.status.success() {
+            panic!("ffmpeg failed: {:?}", output.status.code());
+        }
+
+        Ok(())
+    }
 }
 
 pub trait TakeRef<T> {

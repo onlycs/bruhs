@@ -90,7 +90,7 @@ impl Bruh {
 
     pub fn into_png(&self, dir: &PathBuf, frame: usize, width: usize) -> Result<(), io::Error> {
         let mut img = dir.clone();
-        img.push(format!("img{frame}.png"));
+        img.push(format!("frame{frame}.png"));
 
         let info = ImageInfo::new(
             (width as i32, (self.pixels.len() / width) as i32),

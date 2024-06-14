@@ -39,5 +39,5 @@ fn main() {
 
     println!("{}", decode == bruhs);
 
-    decode.into_pngs("test.bruhs.pngs".into()).unwrap()
+    decode.into_gif("testout.gif".into()).unwrap();
 }
