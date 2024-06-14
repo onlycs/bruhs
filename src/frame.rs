@@ -1,12 +1,33 @@
-use colors_transform::{AlphaColor, Color, Rgb};
+use colors_transform::{Color, Rgb};
 use std::{io, path::PathBuf};
 
 use crate::img::Bruh;
 
 #[derive(Debug)]
 pub enum BruhDelta {
-    Keep(u32), // keep: length
+    Skip(u32), // skip: length
     Overwrite(Rgb),
+}
+
+impl BruhDelta {
+    pub fn encode(this: &Vec<Self>, capacity: usize) -> Vec<u8> {
+        let mut b = Vec::with_capacity(capacity);
+
+        for i in this {
+            match i {
+                BruhDelta::Skip(i) => {
+                    b.extend(b"s");
+                    b.extend(i.to_ne_bytes());
+                }
+                BruhDelta::Overwrite(col) => {
+                    b.extend(b"o");
+                    b.extend(col.to_css_hex_string()[1..].as_bytes());
+                }
+            }
+        }
+
+        b
+    }
 }
 
 #[derive(Debug)]
@@ -27,9 +48,8 @@ impl Frame {
 #[derive(Debug)]
 pub struct Bruhs {
     pub frames: Vec<Frame>,
-    width: u32,
-    height: u32,
-    pxperframe: usize,
+    width: usize,
+    height: usize,
 }
 
 fn pxdiff(a: &Rgb, b: &Rgb) -> u8 {
@@ -52,7 +72,7 @@ fn pxdiff(a: &Rgb, b: &Rgb) -> u8 {
 }
 
 impl Bruhs {
-    pub fn parse_gif(path: PathBuf, width: u32, height: u32) -> Result<Self, io::Error> {
+    pub fn parse_gif(path: PathBuf, width: usize, height: usize) -> Result<Self, io::Error> {
         let mut pngsdir = path.clone();
         pngsdir.set_extension("pngs_tmp");
 
@@ -64,6 +84,8 @@ impl Bruhs {
             .args(&[
                 "-i",
                 path.to_str().unwrap(),
+                "-vf",
+                format!("scale={}:{}", width, height).as_str(),
                 format!("{}/%04d.png", pngsdir.to_str().unwrap()).as_str(),
             ])
             .output()
@@ -79,7 +101,7 @@ impl Bruhs {
         Ok(bruh)
     }
 
-    pub fn parse_dir(path: PathBuf, width: u32, height: u32) -> Result<Self, std::io::Error> {
+    pub fn parse_dir(path: PathBuf, width: usize, height: usize) -> Result<Self, std::io::Error> {
         let mut frames = vec![];
 
         for entry in std::fs::read_dir(path)? {
@@ -94,7 +116,6 @@ impl Bruhs {
             frames,
             width,
             height,
-            pxperframe: (width * height) as usize,
         };
 
         bruh.deltify();
@@ -111,7 +132,7 @@ impl Bruhs {
             let diff = key.diff(&frame);
 
             // keep a keyframe if the difference is > 90%
-            if diff > (self.pxperframe / 10) * 9 {
+            if diff > ((self.width * self.height) / 10) * 9 {
                 key = frame;
                 continue;
             }
@@ -126,18 +147,44 @@ impl Bruhs {
                 }
 
                 match deltas.last_mut() {
-                    Some(BruhDelta::Keep(len)) => {
+                    Some(BruhDelta::Skip(len)) => {
                         if i % self.width as usize == 0 {
-                            deltas.push(BruhDelta::Keep(1));
+                            deltas.push(BruhDelta::Skip(1));
                         } else {
                             *len += 1;
                         }
                     }
-                    _ => deltas.push(BruhDelta::Keep(1)),
+                    _ => deltas.push(BruhDelta::Skip(1)),
                 }
             }
 
             *next = Frame::Delta(deltas);
         }
+    }
+
+    pub fn encode(&self) -> Vec<u8> {
+        let mut b = Vec::with_capacity(self.frames.len() * self.width * self.height * 4);
+
+        let w_bytes = self.width.to_ne_bytes();
+        let h_bytes = self.width.to_ne_bytes();
+
+        b.extend(w_bytes);
+        b.extend(h_bytes);
+
+        for fr in &self.frames {
+            match fr {
+                Frame::Key(img) => {
+                    b.extend(b"k");
+                    b.extend(img.encode(self.width));
+                    b.extend(b"\n");
+                }
+                Frame::Delta(delt) => {
+                    b.extend(b"t");
+                    b.extend(BruhDelta::encode(&delt, self.width * self.height));
+                }
+            }
+        }
+
+        b
     }
 }

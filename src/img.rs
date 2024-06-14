@@ -35,7 +35,7 @@ impl Bruh {
 
         let mut pixels = vec![];
 
-        for (w, h, rgba) in img.pixels() {
+        for (_, _, rgba) in img.pixels() {
             let brgba = rgba.0;
             let rgb = Rgb::from(brgba[0] as f32, brgba[1] as f32, brgba[2] as f32);
 
@@ -57,6 +57,20 @@ impl Bruh {
         }
 
         diff
+    }
+
+    pub fn encode(&self, w: usize) -> Vec<u8> {
+        let mut b = Vec::with_capacity(self.pixels.len() * 6); // ascii fits in u8
+
+        for (i, px) in self.pixels.iter().enumerate() {
+            if i % w == 0 {
+                b.extend(b"\n");
+            }
+
+            b.extend(px.to_css_hex_string()[1..].as_bytes())
+        }
+
+        b
     }
 }
 
