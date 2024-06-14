@@ -1,6 +1,5 @@
 use crate::img::{decode_rgb, Bruh};
 use colors_transform::{Color, Rgb};
-use itertools::Itertools;
 use std::{io, path::PathBuf};
 
 fn vec_to_u32_ne(bytes: &[u8]) -> u32 {
@@ -9,7 +8,7 @@ fn vec_to_u32_ne(bytes: &[u8]) -> u32 {
     u32::from_ne_bytes(result)
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum BruhDelta {
     Skip(u32), // skip: length
     Overwrite(Rgb),
@@ -156,7 +155,7 @@ impl Bruhs {
             let diff = key.diff(&frame);
 
             // keep a keyframe if the difference is > 90%
-            if diff > ((self.width * self.height) / 10) * 9 {
+            if diff > self.width * self.height {
                 key = frame;
                 continue;
             }
@@ -182,7 +181,8 @@ impl Bruhs {
                 }
             }
 
-            *next = Frame::Delta(deltas);
+            key.update(&deltas);
+            *next = Frame::Delta(deltas)
         }
     }
 
