@@ -5,8 +5,6 @@ use std::{
     io::{Read, Write},
 };
 
-use eframe::egui;
-use egui_extras::RetainedImage;
 use itertools::Itertools;
 
 mod frame;
@@ -40,4 +38,6 @@ fn main() {
     let decode = frame::Bruhs::decode(bytes);
 
     println!("{}", decode == bruhs);
+
+    decode.into_pngs("test.bruhs.pngs".into()).unwrap()
 }

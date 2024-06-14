@@ -93,7 +93,7 @@ impl Bruh {
         img.push(format!("img{frame}.png"));
 
         let info = ImageInfo::new(
-            (width as i32, self.pixels.len() as i32),
+            (width as i32, (self.pixels.len() / width) as i32),
             ColorType::RGBA8888,
             AlphaType::Opaque,
             None,
@@ -108,10 +108,10 @@ impl Bruh {
             let color4f = Color4f::new(parsed.r as f32, parsed.g as f32, parsed.b as f32, 0.004);
             let paint = Paint::new(color4f, None);
 
-            let x = i % width;
-            let y = i / width;
+            let x = (i % width) as f32;
+            let y = (i / width) as f32;
 
-            let rect = Rect::from_point_and_size((x as f32, y as f32), (1.0, 1.0));
+            let rect = Rect::from_point_and_size((x, y), (1.0, 1.0));
             canvas.draw_rect(rect, &paint);
         }
 

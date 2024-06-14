@@ -1,6 +1,6 @@
 use crate::img::{decode_rgb, Bruh};
 use colors_transform::{Color, Rgb};
-use std::{io, path::PathBuf};
+use std::{fs, io, path::PathBuf};
 
 fn vec_to_u32_ne(bytes: &[u8]) -> u32 {
     let mut result = [0u8; 4];
@@ -97,7 +97,7 @@ fn pxdiff(a: &Rgb, b: &Rgb) -> u8 {
 impl Bruhs {
     pub fn parse_gif(path: PathBuf, width: usize, height: usize) -> Result<Self, io::Error> {
         let mut pngsdir = path.clone();
-        pngsdir.set_extension("pngs_tmp");
+        pngsdir.set_extension("pngs");
 
         //create dir
         std::fs::create_dir(&pngsdir)?;
@@ -253,6 +253,33 @@ impl Bruhs {
             height,
             frames,
         }
+    }
+
+    pub fn into_pngs(&self, dir: PathBuf) -> Result<(), io::Error> {
+        let mut nframe = 0;
+        let mut key = self.frames.first().unwrap().force_key().clone();
+
+        // make dir
+        fs::create_dir(&dir)?;
+
+        for frame in &self.frames[1..] {
+            key.into_png(&dir, nframe, self.width)?;
+
+            match frame {
+                Frame::Key(newkey) => {
+                    key = newkey.clone();
+                }
+                Frame::Delta(delta) => {
+                    key.update(delta);
+                }
+            }
+
+            nframe += 1;
+        }
+
+        key.into_png(&dir, nframe, self.width)?;
+
+        Ok(())
     }
 }
 
