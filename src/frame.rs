@@ -5,7 +5,7 @@ use crate::img::Bruh;
 
 #[derive(Debug)]
 pub enum BruhDelta {
-    Skip(u32), // skip: length
+    Skip(usize), // skip: length
     Overwrite(Rgb),
 }
 
