@@ -8,8 +8,6 @@ edition = "2021"
 [dependencies]
 colors-transform = "0.2.11"
 css-color-parser = "0.1.2"
-eframe = "0.22.0"
-egui_extras = { version = "0.22", features = ["image"] }
 gif = "0.13.1"
 image = { version = "0.24", default-features = false, features = ["png"] }
 itertools = "0.13.0"
