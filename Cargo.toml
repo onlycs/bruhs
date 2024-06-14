@@ -11,4 +11,5 @@ css-color-parser = "0.1.2"
 eframe = "0.22.0"
 egui_extras = { version = "0.22", features = ["image"] }
 image = { version = "0.24", default-features = false, features = ["png"] }
+itertools = "0.13.0"
 skia-safe = "0.63.0"

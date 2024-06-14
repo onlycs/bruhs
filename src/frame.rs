@@ -1,9 +1,15 @@
+use crate::img::{decode_rgb, Bruh};
 use colors_transform::{Color, Rgb};
+use itertools::Itertools;
 use std::{io, path::PathBuf};
 
-use crate::img::Bruh;
+fn vec_to_u32_ne(bytes: &[u8]) -> u32 {
+    let mut result = [0u8; 4];
+    result.copy_from_slice(bytes);
+    u32::from_ne_bytes(result)
+}
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BruhDelta {
     Skip(u32), // skip: length
     Overwrite(Rgb),
@@ -28,9 +34,27 @@ impl BruhDelta {
 
         b
     }
+
+    pub fn decode(b: &mut impl Iterator<Item = u8>) -> Option<(Self, u32)> {
+        match std::str::from_utf8(&[b.next()?]).unwrap() {
+            "s" => {
+                let next_four = b.take_ref(4);
+                let num = vec_to_u32_ne(&next_four);
+
+                Some((Self::Skip(num), num))
+            }
+            "o" => {
+                let next_six = b.take_ref(6);
+                let decode = decode_rgb(next_six);
+
+                Some((Self::Overwrite(decode), 1))
+            }
+            _ => panic!(),
+        }
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Frame {
     Key(Bruh),
     Delta(Vec<BruhDelta>),
@@ -45,7 +69,7 @@ impl Frame {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Bruhs {
     pub frames: Vec<Frame>,
     width: usize,
@@ -176,7 +200,6 @@ impl Bruhs {
                 Frame::Key(img) => {
                     b.extend(b"k");
                     b.extend(img.encode(self.width));
-                    b.extend(b"\n");
                 }
                 Frame::Delta(delt) => {
                     b.extend(b"t");
@@ -186,5 +209,68 @@ impl Bruhs {
         }
 
         b
+    }
+
+    pub fn decode(b: Vec<u8>) -> Self {
+        let mut iter = b.into_iter();
+
+        let w_bytes = iter.take_ref(4);
+        let h_bytes = iter.take_ref(4);
+        let width = vec_to_u32_ne(&w_bytes) as usize;
+        let height = vec_to_u32_ne(&h_bytes) as usize;
+
+        let mut frames = vec![];
+
+        while let Some(id) = iter.next() {
+            match std::str::from_utf8(&[id]).unwrap() {
+                "k" => {
+                    let next_frame = iter.take_ref(((width * 6) + 1) * height);
+                    let decoded = Bruh::decode(&next_frame, width);
+                    frames.push(Frame::Key(decoded));
+                }
+                "t" => {
+                    let mut delta = vec![];
+                    let mut decoded = 0;
+
+                    while decoded < width * height {
+                        match BruhDelta::decode(&mut iter) {
+                            Some((del, len)) => {
+                                delta.push(del);
+                                decoded += len as usize;
+                            }
+                            None => break,
+                        }
+                    }
+
+                    frames.push(Frame::Delta(delta));
+                }
+                e => panic!("{e:?}"),
+            }
+        }
+
+        Self {
+            width,
+            height,
+            frames,
+        }
+    }
+}
+
+pub trait TakeRef<T> {
+    fn take_ref(&mut self, num: usize) -> Vec<T>;
+}
+
+impl<T: Copy, I: Iterator<Item = T>> TakeRef<T> for I {
+    fn take_ref(&mut self, num: usize) -> Vec<T> {
+        let mut v = vec![];
+
+        for _ in 0..num {
+            match self.next() {
+                Some(n) => v.push(n),
+                None => return v,
+            }
+        }
+
+        v
     }
 }
