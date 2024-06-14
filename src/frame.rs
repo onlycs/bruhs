@@ -5,7 +5,7 @@ use crate::img::Bruh;
 
 #[derive(Debug)]
 pub enum BruhDelta {
-    Skip(usize), // skip: length
+    Skip(u32), // skip: length
     Overwrite(Rgb),
 }
 
@@ -165,8 +165,8 @@ impl Bruhs {
     pub fn encode(&self) -> Vec<u8> {
         let mut b = Vec::with_capacity(self.frames.len() * self.width * self.height * 4);
 
-        let w_bytes = self.width.to_ne_bytes();
-        let h_bytes = self.width.to_ne_bytes();
+        let w_bytes = (self.width as u32).to_ne_bytes();
+        let h_bytes = (self.height as u32).to_ne_bytes();
 
         b.extend(w_bytes);
         b.extend(h_bytes);
