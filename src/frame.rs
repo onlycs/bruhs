@@ -259,9 +259,6 @@ impl Bruhs {
         let mut nframe = 0;
         let mut key = self.frames.first().unwrap().force_key().clone();
 
-        // make dir
-        fs::create_dir(&dir)?;
-
         for frame in &self.frames[1..] {
             key.into_png(&dir, nframe, self.width)?;
 
@@ -285,6 +282,8 @@ impl Bruhs {
     pub fn into_gif(&self, file: PathBuf) -> Result<(), io::Error> {
         let mut pngsdir = file.clone();
         pngsdir.set_extension("pngs");
+
+        fs::create_dir(&pngsdir)?;
         self.into_pngs(pngsdir.clone())?;
 
         // run ffmpeg
@@ -300,6 +299,9 @@ impl Bruhs {
         if !output.status.success() {
             panic!("ffmpeg failed: {:?}", output.status.code());
         }
+
+        // remove dir
+        fs::remove_dir_all(pngsdir)?;
 
         Ok(())
     }
