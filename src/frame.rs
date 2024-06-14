@@ -110,13 +110,13 @@ impl Bruhs {
             let frame = next.force_key().clone();
             let diff = key.diff(&frame);
 
-            if diff == self.pxperframe {
+            // keep a keyframe if the difference is > 90%
+            if diff > (self.pxperframe / 10) * 9 {
                 key = frame;
                 continue;
             }
 
             // build a delta
-
             let mut deltas = vec![];
 
             for (i, pixel) in key.pixels.iter().enumerate() {

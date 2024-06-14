@@ -9,5 +9,5 @@ mod img;
 fn main() {
     let frame = frame::Bruhs::parse_gif("test.gif".into(), 265, 199).unwrap();
 
-    println!("{:?}", frame.frames[1]);
+    println!("{:?}", frame.frames[4]);
 }
