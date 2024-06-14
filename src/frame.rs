@@ -1,4 +1,4 @@
-use colors_transform::Rgb;
+use colors_transform::{AlphaColor, Color, Rgb};
 use std::{io, path::PathBuf};
 
 use crate::img::Bruh;
@@ -30,6 +30,25 @@ pub struct Bruhs {
     width: u32,
     height: u32,
     pxperframe: usize,
+}
+
+fn pxdiff(a: &Rgb, b: &Rgb) -> u8 {
+    let r1 = a.get_red();
+    let g1 = a.get_green();
+    let b1 = a.get_blue();
+
+    let r2 = b.get_red();
+    let g2 = b.get_green();
+    let b2 = b.get_blue();
+
+    let dr = r1 - r2;
+    let dg = g1 - g2;
+    let db = b1 - b2;
+
+    let below = dr.powi(2) + dg.powi(2) + db.powi(2);
+    let root = (below as f64).sqrt();
+
+    root as u8
 }
 
 impl Bruhs {
@@ -101,7 +120,7 @@ impl Bruhs {
             let mut deltas = vec![];
 
             for (i, pixel) in key.pixels.iter().enumerate() {
-                if pixel != &frame.pixels[i] {
+                if pxdiff(pixel, &frame.pixels[i]) > 30 {
                     deltas.push(BruhDelta::Overwrite(frame.pixels[i]));
                     continue;
                 }
